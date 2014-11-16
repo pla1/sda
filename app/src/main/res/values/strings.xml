@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Schedules Direct</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-
+    <string name="action_status">Status</string>
+    <string name="action_headends">Headends</string>
+    <string name="postalCodeKey">postalCode</string>
+    <string name="postalCodeTitle">Postal code</string>
+    <string name="usernameKey">username</string>
+    <string name="usernameTitle">User name</string>
+    <string name="passwordKey">password</string>
+    <string name="passwordTitle">Password</string>
+    <string name="tokenKey">token</string>
+    <string name="tokenTitle">Token</string>
+    <string name="accountStatusKey">accountStatus</string>
+    <string name="settingsTitle">Settings</string>
 </resources>
+

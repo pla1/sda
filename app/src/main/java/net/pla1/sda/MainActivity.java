@@ -1,17 +1,28 @@
 package net.pla1.sda;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import java.util.Date;
 
 
 public class MainActivity extends Activity {
+    private Context context;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_layout);
+        context = this;
     }
 
     @Override
@@ -24,8 +35,50 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            return true;
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_status) {
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+            checkStatus(sharedPreferences);
+        }
+        if (id == R.id.action_headends) {
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+            getHeadends(sharedPreferences);
         }
         return super.onOptionsItemSelected(item);
     }
+
+    private void checkStatus(final SharedPreferences sharedPreferences) {
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... params) {
+                return Utils.checkStatus(context);
+            }
+
+            @Override
+            protected void onPostExecute(String message) {
+                String accountStatus = message + " " + new Date();
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(getString(R.string.accountStatusKey), accountStatus);
+                editor.apply();
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            }
+        }.execute(null, null, null);
+    }
+
+    private void getHeadends(final SharedPreferences sharedPreferences) {
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... params) {
+                return Utils.getHeadends(context);
+            }
+
+            @Override
+            protected void onPostExecute(String message) {
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            }
+        }.execute(null, null, null);
+    }
+
 }

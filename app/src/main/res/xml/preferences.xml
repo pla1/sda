@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:id="@+id/pref_usernameField"
+        android:key="@string/usernameKey"
+        android:title="@string/usernameTitle"
+        android:defaultValue=""
+        android:hint="@string/usernameTitle"
+        android:inputType="text" />
+    <EditTextPreference
+        android:key="@string/passwordKey"
+        android:title="@string/passwordTitle"
+        android:defaultValue=""
+        android:hint="@string/passwordTitle"
+        android:inputType="textPassword" />
+    <EditTextPreference
+        android:key="@string/postalCodeKey"
+        android:title="@string/postalCodeTitle"
+        android:defaultValue=""
+        android:hint="@string/postalCodeTitle"
+        android:inputType="number" />
+
+
+</PreferenceScreen>

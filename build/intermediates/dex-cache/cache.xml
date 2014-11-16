@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pre-dex-items>
+
+    <item
+        dex="/home/htplainf/sda/app/build/intermediates/pre-dexed/debug/gson-2.3-e6e9aab55e30c62a93a2a2e718ce08de3bb568a1.jar"
+        jar="/home/htplainf/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.3/5fc52c41ef0239d1093a1eb7c3697036183677ce/gson-2.3.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="5fc52c41ef0239d1093a1eb7c3697036183677ce"/>
+
+</pre-dex-items>
