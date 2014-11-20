@@ -9,6 +9,7 @@ import android.preference.PreferenceFragment;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -76,18 +77,19 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
     }
 
     private void getHeadends(final SharedPreferences sharedPreferences) {
-        new AsyncTask<Void, Void, String>() {
+        new AsyncTask<Void, Void, ArrayList<Headend>>() {
             @Override
-            protected String doInBackground(Void... params) {
+            protected ArrayList<Headend> doInBackground(Void... params) {
                 return Utils.getHeadends(context);
             }
 
             @Override
-            protected void onPostExecute(String message) {
-                Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
+            protected void onPostExecute(ArrayList<Headend> headends) {
+                Toast.makeText(getActivity(), headends.size() + " headends.", Toast.LENGTH_LONG).show();
             }
         }.execute(null, null, null);
     }
+
     @Override
     public void onResume() {
         super.onResume();

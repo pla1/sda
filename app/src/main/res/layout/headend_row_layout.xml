@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:layout_width="fill_parent"
+    android:layout_height="50sp"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/headendCheckbox" />
+
+    <TextView
+        android:hint="Type"
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/type" />
+
+    <TextView
+        android:hint="Location"
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/location" />
+
+    <TextView
+        android:hint="Name"
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/name" />
+
+    <TextView
+        android:hint="Lineup name"
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/lineupName" />
+
+</LinearLayout>

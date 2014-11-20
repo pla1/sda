@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 
@@ -43,8 +44,12 @@ public class MainActivity extends Activity {
             checkStatus(sharedPreferences);
         }
         if (id == R.id.action_headends) {
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-            getHeadends(sharedPreferences);
+            Intent intent = new Intent(context, HeadendActivity.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_lineups) {
+            Intent intent = new Intent(context, LineupActivity.class);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -62,21 +67,38 @@ public class MainActivity extends Activity {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(getString(R.string.accountStatusKey), accountStatus);
                 editor.apply();
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                // Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(context, StatusActivity.class);
+                startActivity(intent);
             }
         }.execute(null, null, null);
     }
 
-    private void getHeadends(final SharedPreferences sharedPreferences) {
-        new AsyncTask<Void, Void, String>() {
+    /*
+        private void getHeadends(final SharedPreferences sharedPreferences) {
+            new AsyncTask<Void, Void, String>() {
+                @Override
+                protected String doInBackground(Void... params) {
+                    return Utils.getHeadends(context);
+                }
+
+                @Override
+                protected void onPostExecute(String message) {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                }
+            }.execute(null, null, null);
+        }
+    */
+    private void getLineups(final SharedPreferences sharedPreferences) {
+        new AsyncTask<Void, Void, ArrayList<Lineup>>() {
             @Override
-            protected String doInBackground(Void... params) {
-                return Utils.getHeadends(context);
+            protected ArrayList<Lineup> doInBackground(Void... params) {
+                return Utils.getLineups(context);
             }
 
             @Override
-            protected void onPostExecute(String message) {
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            protected void onPostExecute(ArrayList<Lineup> lineups) {
+                Toast.makeText(context, lineups.size() + " lineups", Toast.LENGTH_LONG).show();
             }
         }.execute(null, null, null);
     }

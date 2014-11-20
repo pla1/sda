@@ -16,4 +16,9 @@
         android:title="@string/action_headends"
         android:orderInCategory="120"
         android:showAsAction="never" />
+    <item
+        android:id="@+id/action_lineups"
+        android:title="@string/action_lineups"
+        android:orderInCategory="130"
+        android:showAsAction="never" />
 </menu>

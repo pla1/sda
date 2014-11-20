@@ -1,13 +1,14 @@
 package net.pla1.sda;
 
-public class Token {
+import java.io.Serializable;
+
+public class Token implements Serializable {
     private String token;
     private int code;
     private String serverID;
     private String message;
 
     public Token() {
-
     }
 
     public String toString() {

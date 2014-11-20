@@ -19,6 +19,15 @@
         <activity
             android:name="net.pla1.sda.SettingsActivity"
             android:label="@string/settingsTitle" />
+        <activity
+            android:name="net.pla1.sda.StatusActivity"
+            android:label="@string/statusTitle" />
+        <activity
+            android:name="net.pla1.sda.HeadendActivity"
+            android:label="@string/headendTitle" />
+        <activity
+            android:name="net.pla1.sda.LineupActivity"
+            android:label="@string/lineupTitle" />
 
     </application>
 

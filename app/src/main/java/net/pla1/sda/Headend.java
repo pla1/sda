@@ -1,12 +1,14 @@
 package net.pla1.sda;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Headend {
+public class Headend implements Serializable {
     private String type;
     private String location;
     private String name;
     private ArrayList<Lineup> lineups;
+    private boolean found = false;
 
 
     public Headend() {
@@ -26,6 +28,12 @@ public class Headend {
         return sb.toString();
     }
 
+    public String getFirstLineupUri() {
+        if (lineups == null || lineups.isEmpty()) {
+            return null;
+        }
+        return lineups.get(0).getUri();
+    }
 
     public String getType() {
         return type;
@@ -57,5 +65,13 @@ public class Headend {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isFound() {
+        return found;
+    }
+
+    public void setFound(boolean found) {
+        this.found = found;
     }
 }

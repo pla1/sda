@@ -1,8 +1,9 @@
 package net.pla1.sda;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Account {
+public class Account implements Serializable{
     private Date expires;
     private String[] messages;
     private int maxLineups;

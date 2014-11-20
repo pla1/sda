@@ -6,16 +6,23 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -34,6 +41,13 @@ public class Utils {
         }
     }
 
+    public static String getStatus(Context context) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        StringBuilder sb = new StringBuilder();
+        sb.append(sharedPreferences.getString("accountStatus", "")).append("\n");
+        return sb.toString();
+    }
+
     public static boolean isNotBlank(String s) {
         return !isBlank(s);
     }
@@ -46,6 +60,7 @@ public class Utils {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String username = sharedPreferences.getString("username", "");
         String password = sharedPreferences.getString("password", "");
+        BufferedReader reader = null;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             digest.update(password.getBytes("utf8"));
@@ -63,7 +78,7 @@ public class Utils {
             StringEntity entity = new StringEntity(jsonObject.toString());
             request.setEntity(entity);
             HttpResponse response = new DefaultHttpClient().execute(request);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
             Gson gson = new Gson();
             Token token = gson.fromJson(reader, Token.class);
             sharedPreferences.edit().putString("token", token.getToken()).commit();
@@ -72,6 +87,8 @@ public class Utils {
         } catch (Exception e) {
             e.printStackTrace();
             return e.getLocalizedMessage();
+        } finally {
+            close(reader);
         }
     }
 
@@ -84,28 +101,106 @@ public class Utils {
         String token = sharedPreferences.getString("token", "");
         request.setHeader("token", token);
         Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
         try {
             HttpResponse response = new DefaultHttpClient().execute(request);
             Log.i(TAG, "Response: " + response.getStatusLine());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
-            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                Log.i(TAG, "Response line: " + line);
-            }
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            //    for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            //        Log.i(TAG, "Response line: " + line);
+            //    }
             Gson gson = new Gson();
             Status status = gson.fromJson(reader, Status.class);
+            Log.i(TAG, "Status object dump: " + Utils.toString(status));
             Log.i(TAG, "checkStatus Status: " + status.toString() + " IS READER CLOSED? " + reader.ready());
             if (status != null && status.getSystemStatus() != null && status.getSystemStatus().size() > 0) {
-                return status.getSystemStatus().get(0).getStatus();
+                return status.toString();
             } else {
                 return "Status retrieve failed.";
             }
         } catch (Exception e) {
             e.printStackTrace();
             return e.getLocalizedMessage();
+        } finally {
+            close(reader);
         }
     }
 
-    public static String getHeadends(Context context) {
+    public static ArrayList<Lineup> getLineups(Context context) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        HttpGet request = new HttpGet(BASE_URL + "lineups");
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        try {
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+
+     //       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+     //           Log.i(TAG, "Response line: " + line);
+     //       }
+
+
+            Gson gson = new Gson();
+            Lineups lineups = gson.fromJson(reader, Lineups.class);
+            for (Lineup lineup : lineups.getLineups()) {
+                Log.i(TAG, "LINEUP: " + gson.toJson(lineup));
+            }
+            Log.i(TAG, lineups.getLineups().size() + " lineups");
+            return lineups.getLineups();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<Lineup>();
+        } finally {
+            close(reader);
+        }
+    }
+
+    //TODO
+    public static JsonObject lineupAction(Context context, String action, String uri) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String url = "https://json.schedulesdirect.org" + uri;
+        Log.i(TAG, "lineupAction Action: " + action + " uri: " + uri + " URL: " + url);
+        HttpRequestBase request;
+        if ("put".equals(action)) {
+            request = new HttpPut(url);
+        } else {
+            request = new HttpDelete(url);
+        }
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        try {
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                Log.i(TAG, "Response line: " + line);
+                sb.append(line);
+            }
+            JsonObject jsonObject = (JsonObject) new JsonParser().parse(sb.toString());
+            return jsonObject;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            close(reader);
+        }
+        return new JsonObject();
+    }
+
+    public static ArrayList<Headend> getHeadends(Context context) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String postalCode = sharedPreferences.getString("postalCode", "");
         String token = sharedPreferences.getString("token", "");
@@ -114,9 +209,10 @@ public class Utils {
         request.setHeader("Content-type", "application/json");
         request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
         request.setHeader("token", token);
+        BufferedReader reader = null;
         try {
             HttpResponse response = new DefaultHttpClient().execute(request);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
             StringBuilder sb = new StringBuilder();
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
                 Log.i(TAG, "Response line: " + line);
@@ -140,10 +236,12 @@ public class Utils {
                 Log.i(TAG, "HEADEND: " + headend.toString());
             }
             Log.i(TAG, headends.size() + " headends");
-            return sb.toString();
+            return headends;
         } catch (Exception e) {
             e.printStackTrace();
-            return e.getLocalizedMessage();
+            return new ArrayList<Headend>();
+        } finally {
+            close(reader);
         }
     }
 
@@ -155,5 +253,22 @@ public class Utils {
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public static String toString(Object object) {
+        Gson gson = new Gson();
+        return gson.toJson(object);
+    }
+
+    public static void close(Reader reader) {
+        if (reader == null) {
+            return;
+        } else {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

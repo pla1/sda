@@ -1,9 +1,10 @@
 package net.pla1.sda;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class Status {
+public class Status implements Serializable {
     private Account account;
     private ArrayList<Lineup> lineups;
     private Date lastDataUpdate;
