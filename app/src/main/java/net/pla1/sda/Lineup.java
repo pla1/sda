@@ -10,11 +10,14 @@ public class Lineup implements Serializable {
     private String name;
     private String type;
     private String location;
+    private boolean subscribed = false;
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(ID).append(" ");
-        sb.append(name).append(" ");
+        if (name != null) {
+            sb.append(name).append(" ");
+        }
         sb.append(modified).append(" ");
         sb.append(uri).append(" ");
         return sb.toString();
@@ -66,5 +69,23 @@ public class Lineup implements Serializable {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public boolean equals(Object object) {
+        if (object != null && object instanceof Lineup) {
+            Lineup lineup = (Lineup) object;
+            if (lineup.getUri() != null && uri != null && lineup.getUri().equals(uri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isSubscribed() {
+        return subscribed;
+    }
+
+    public void setSubscribed(boolean subscribed) {
+        this.subscribed = subscribed;
     }
 }

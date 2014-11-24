@@ -62,7 +62,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... params) {
-                return Utils.checkStatus(context);
+                return Utils.getStatusFromServer(context);
             }
 
             @Override

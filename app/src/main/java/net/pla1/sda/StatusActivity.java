@@ -14,6 +14,6 @@ public class StatusActivity extends Activity {
         setContentView(R.layout.status_layout);
         context = this;
         TextView statusField = (TextView) findViewById(R.id.statusField);
-        statusField.setText(Utils.getStatus(context));
+        statusField.setText(Utils.getStatusFromPreferences(context));
     }
 }

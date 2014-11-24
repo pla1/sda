@@ -3,7 +3,7 @@ package net.pla1.sda;
 import java.io.Serializable;
 import java.util.Date;
 
-public class Account implements Serializable{
+public class Account implements Serializable {
     private Date expires;
     private String[] messages;
     private int maxLineups;
@@ -15,12 +15,17 @@ public class Account implements Serializable{
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("Account expires: ");
         sb.append(expires).append(" ");
+        sb.append("\nMaximum lineups: ");
         sb.append(maxLineups).append(" ");
+        sb.append("\nSuggested connect time: ");
         sb.append(nextSuggestedConnectTime).append(" ");
-        sb.append(" message quantity: ").append(messages.length);
-        for (String message : messages) {
-            sb.append("\n").append(message);
+        if (messages.length > 0) {
+            sb.append("\nMessage quantity: ").append(messages.length);
+            for (String message : messages) {
+                sb.append("\nMessage: ").append(message);
+            }
         }
         return sb.toString();
     }

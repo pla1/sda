@@ -9,7 +9,6 @@ public class Lineups {
     private ArrayList<Lineup> lineups;
 
     public Lineups() {
-
     }
 
     public String getServerID() {

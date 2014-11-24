@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     android:layout_width="fill_parent"
     android:layout_height="50sp"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <ImageView
-        android:src="@android:drawable/btn_star_big_on"
+        android:layout_height="wrap_content"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:id="@+id/starred" />
+        android:id="@+id/logo" />
 
     <TextView
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/channel" />
+
+    <TextView
+        android:padding="10sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/callsign" />
+
+    <TextView
+        android:padding="10sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/name" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/location" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/type" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/uri" />
 </LinearLayout>

@@ -51,6 +51,10 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(context, LineupActivity.class);
             startActivity(intent);
         }
+        if (id == R.id.action_stations) {
+            Intent intent = new Intent(context, StationActivity.class);
+            startActivity(intent);
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -58,7 +62,7 @@ public class MainActivity extends Activity {
         new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... params) {
-                return Utils.checkStatus(context);
+                return Utils.getStatusFromServer(context);
             }
 
             @Override

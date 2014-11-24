@@ -7,6 +7,17 @@ public class SystemStatus {
     private String status;
     private String details;
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("System status date: ");
+        sb.append(date).append("\nSystem status: ");
+        sb.append(status);
+        if (details != null) {
+            sb.append("\nSystem status details: ").append(details);
+        }
+        return sb.toString();
+    }
+
     public Date getDate() {
         return date;
     }

@@ -1,7 +1,12 @@
 package net.pla1.sda;
 
+import android.app.DownloadManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -20,6 +25,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -41,7 +49,7 @@ public class Utils {
         }
     }
 
-    public static String getStatus(Context context) {
+    public static String getStatusFromPreferences(Context context) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         StringBuilder sb = new StringBuilder();
         sb.append(sharedPreferences.getString("accountStatus", "")).append("\n");
@@ -92,7 +100,42 @@ public class Utils {
         }
     }
 
-    public static String checkStatus(Context context) {
+    public static boolean checkStatus(Context context) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        HttpGet request = new HttpGet(BASE_URL + "status");
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        try {
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            Gson gson = new Gson();
+            Status status = gson.fromJson(reader, Status.class);
+            Log.i(TAG, "Status object dump: " + Utils.toString(status));
+            Log.i(TAG, "checkStatus Status: " + status.toString() + " IS READER CLOSED? " + reader.ready());
+            if (status != null && status.getSystemStatus() != null && status.getSystemStatus().size() > 0) {
+                if ("Online".equals(status.getSystemStatus().get(0).getStatus())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            close(reader);
+        }
+    }
+
+    public static String getStatusFromServer(Context context) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         HttpGet request = new HttpGet(BASE_URL + "status");
         request.setHeader("Accept", "application/json");
@@ -126,7 +169,48 @@ public class Utils {
         }
     }
 
+    public static ArrayList<Station> getStations(Context context, String uri) {
+        if (!checkStatus(context)) {
+            setToken(context);
+        }
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String url = "https://json.schedulesdirect.org" + uri;
+        Log.i(TAG, "URL: " + url);
+        HttpGet request = new HttpGet(url);
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        try {
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+
+            //       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            //           Log.i(TAG, "Response line: " + line);
+            //       }
+
+
+            Gson gson = new Gson();
+            StationResponse stationResponse = gson.fromJson(reader, StationResponse.class);
+            Log.i(TAG, stationResponse.toString());
+            return stationResponse.getStationsWithChannelNumber();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<Station>();
+        } finally {
+            close(reader);
+        }
+
+    }
+
     public static ArrayList<Lineup> getLineups(Context context) {
+        if (!checkStatus(context)) {
+            setToken(context);
+        }
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         HttpGet request = new HttpGet(BASE_URL + "lineups");
         request.setHeader("Accept", "application/json");
@@ -141,9 +225,9 @@ public class Utils {
             Log.i(TAG, "Response: " + response.getStatusLine());
             reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
 
-     //       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-     //           Log.i(TAG, "Response line: " + line);
-     //       }
+            //       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            //           Log.i(TAG, "Response line: " + line);
+            //       }
 
 
             Gson gson = new Gson();
@@ -161,8 +245,8 @@ public class Utils {
         }
     }
 
-    //TODO
     public static JsonObject lineupAction(Context context, String action, String uri) {
+        Log.i(TAG, "lineupAction action: " + action + " URI: " + uri);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String url = "https://json.schedulesdirect.org" + uri;
         Log.i(TAG, "lineupAction Action: " + action + " uri: " + uri + " URL: " + url);
@@ -201,6 +285,9 @@ public class Utils {
     }
 
     public static ArrayList<Headend> getHeadends(Context context) {
+        if (!checkStatus(context)) {
+            setToken(context);
+        }
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String postalCode = sharedPreferences.getString("postalCode", "");
         String token = sharedPreferences.getString("token", "");
@@ -270,5 +357,52 @@ public class Utils {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void saveImageToDisk(Context context, Bitmap bitmap, Station station) {
+        FileOutputStream out = null;
+        try {
+            String fileName = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/" + station.getCallsign() + ".png";
+            File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos");
+            directory.mkdirs();
+            Log.i(TAG, "saveImageToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists());
+            out = new FileOutputStream(fileName);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void saveImageToDisk(Context context, Station station) {
+        if (isBlank(station.getLogoUrl())) {
+            return;
+        }
+        DownloadManager mgr = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        Uri downloadUri = Uri.parse(station.getLogoUrl());
+        DownloadManager.Request request = new DownloadManager.Request(downloadUri);
+        request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
+                .setAllowedOverRoaming(false)
+                .setTitle(station.getCallsign())
+                .setDescription("Station logo")
+                .setDestinationInExternalPublicDir("/SDALogos", station.getCallsign() + ".png");
+        mgr.enqueue(request);
+    }
+
+    public static Bitmap getImageFromDisk(Context context, Station station) {
+        Uri uri = Uri.parse("file://" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/" + station.getCallsign() + ".png");
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
+            return bitmap;
+        } catch (FileNotFoundException e) {
+        }
+        return null;
     }
 }

@@ -18,16 +18,24 @@ public class Status implements Serializable {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(lastDataUpdate).append(" ");
-        sb.append(serverID).append(" ");
+        sb.append("Last update: ");
+        sb.append(lastDataUpdate).append("\nServer ID: ");
+        sb.append(serverID).append("\nStatus code: ");
         sb.append(code).append(" ");
+        if (systemStatus != null && systemStatus.size() > 0) {
+            for (SystemStatus ss : systemStatus) {
+                sb.append("\n\n");
+                sb.append(ss);
+            }
+        }
         if (account != null) {
+            sb.append("\n");
             sb.append(account.toString()).append(" ");
         }
         if (lineups != null) {
-            sb.append("Line up quantity: ").append(lineups.size());
+            sb.append("\nLine up quantity: ").append(lineups.size());
             for (Lineup lineup : lineups) {
-                sb.append("\n");
+                sb.append("\n\n");
                 sb.append(lineup.toString());
             }
         }
