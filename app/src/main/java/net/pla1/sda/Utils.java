@@ -365,8 +365,9 @@ public class Utils {
             String fileName = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/" + station.getCallsign() + ".png";
             File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos");
             directory.mkdirs();
-            Log.i(TAG, "saveImageToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists());
+            Log.i(TAG, "saveImageToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists() + " URL: " + station.getLogoUrl());
             out = new FileOutputStream(fileName);
+        //    bitmap = Bitmap.createScaledBitmap(bitmap, 100, 75, true);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
         } catch (Exception e) {
             e.printStackTrace();

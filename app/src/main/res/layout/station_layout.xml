@@ -25,6 +25,11 @@
             android:id="@+id/progressBarText" />
     </RelativeLayout>
 
+    <EditText
+        android:id="@+id/filterTextField"
+        android:layout_width="fill_parent"
+        android:layout_height="36dip"
+        android:hint="Search for station" />
 
     <ListView
         android:layout_width="fill_parent"

@@ -56,6 +56,7 @@ public class LineupActivity extends Activity {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         int position = info.position;
         Lineup lineup = availableLineups.get(position);
+        menu.setHeaderTitle("Lineup Menu");
         if (lineup.isSubscribed()) {
             menu.add(0, Menu.FIRST + 1, 0, "Un-subscribe");
         } else {
@@ -63,7 +64,6 @@ public class LineupActivity extends Activity {
         }
         if (lineup.isSubscribed()) {
             menu.add(0, Menu.FIRST + 2, 0, "List channels");
-            menu.setHeaderTitle("iTV Device Menu");
         }
     }
 

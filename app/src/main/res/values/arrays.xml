@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <string-array name="downloadArray">
+        <item>Wifi</item>
+        <item>Manual</item>
+        <item>Anytime</item>
+    </string-array>
+
+    <string-array name="downloadValues">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="daysArray">
+        <item>Two</item>
+        <item>Four</item>
+        <item>Thirteen</item>
+    </string-array>
+
+    <string-array name="daysValues">
+        <item>2</item>
+        <item>4</item>
+        <item>13</item>
+    </string-array>
+</resources>

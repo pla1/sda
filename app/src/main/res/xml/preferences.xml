@@ -20,6 +20,17 @@
         android:defaultValue=""
         android:hint="@string/postalCodeTitle"
         android:inputType="number" />
-
+    <ListPreference
+        android:title="Download preference"
+        android:key="downloadPreference"
+        android:defaultValue="Wifi"
+        android:entries="@array/downloadArray"
+        android:entryValues="@array/downloadValues" />
+    <ListPreference
+        android:title="Number of days to download"
+        android:key="daysPreference"
+        android:defaultValue="2"
+        android:entries="@array/daysArray"
+        android:entryValues="@array/daysValues" />
 
 </PreferenceScreen>

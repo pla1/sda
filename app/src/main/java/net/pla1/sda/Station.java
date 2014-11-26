@@ -10,6 +10,15 @@ public class Station {
     private String stationID;
     private String channel;
     private Logo logo;
+    private boolean subscribed = false;
+
+    public boolean isSubscribed() {
+        return subscribed;
+    }
+
+    public void setSubscribed(boolean subscribed) {
+        this.subscribed = subscribed;
+    }
 
     public String getLogoUrl() {
         if (logo == null) {

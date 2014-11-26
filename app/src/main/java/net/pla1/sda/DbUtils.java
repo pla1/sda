@@ -10,12 +10,15 @@ import android.util.Log;
 import java.util.ArrayList;
 
 public class DbUtils extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
     private Context context;
     private static final String TABLE_LINEUP = "lineup";
     private static final String[] COLUMNS_LINEUP = {"name", "type", "location", "uri"};
     private static final String TABLE_HEADEND = "headend";
     private static final String[] COLUMNS_HEADEND = {"name", "type", "location", "uri"};
+
+    private static final String TABLE_STATION = "station";
+    private static final String[] COLUMNS_STATION = {"stationID", "md5"};
 
     public DbUtils(Context context) {
         super(context, context.getPackageName(), null, DATABASE_VERSION);
@@ -28,6 +31,7 @@ public class DbUtils extends SQLiteOpenHelper {
         Log.i(Utils.TAG, "DbUtils onCreate");
         db.execSQL(getTableCreateStatement(TABLE_HEADEND, COLUMNS_HEADEND));
         db.execSQL(getTableCreateStatement(TABLE_LINEUP, COLUMNS_LINEUP));
+        db.execSQL(getTableCreateStatement(TABLE_STATION, COLUMNS_STATION));
     }
 
     private String getTableCreateStatement(String tableName, String[] columns) {
@@ -54,6 +58,7 @@ public class DbUtils extends SQLiteOpenHelper {
                 + newVersion + ", which will destroy all old data");
         db.execSQL("drop table if exists " + TABLE_HEADEND);
         db.execSQL("drop table if exists " + TABLE_LINEUP);
+        db.execSQL("drop table if exists " + TABLE_STATION);
         onCreate(db);
     }
 
@@ -74,7 +79,7 @@ public class DbUtils extends SQLiteOpenHelper {
             headend.setLineups(lineups);
             headend.setFound(true);
         }
-        db.close();
+        cursor.close();
         Log.i(Utils.TAG, "getHeadend " + uri);
         return headend;
     }
@@ -83,7 +88,6 @@ public class DbUtils extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         String[] arguments = {headend.getFirstLineupUri()};
         db.delete(TABLE_HEADEND, "uri = ?", arguments);
-        db.close();
     }
 
     public void updateOrInsert(Headend headend) {
@@ -94,7 +98,44 @@ public class DbUtils extends SQLiteOpenHelper {
         if (rowsUpdated == 0) {
             long rowId = db.insert(TABLE_HEADEND, null, contentValues);
         }
-        db.close();
+    }
+
+    public boolean isSubscribedStation(String stationId) {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] columns = {"stationID"};
+        String[] arguments = {stationId};
+        Cursor cursor = db.query(TABLE_STATION, columns, "stationID=?", arguments, null, null, null);
+        boolean subscribed = cursor.moveToFirst();
+      //  Log.i(Utils.TAG, "Subscribed to " + stationId + " " + subscribed);
+        cursor.close();
+        return subscribed;
+    }
+
+    public void deleteStation(String stationID) {
+        SQLiteDatabase db = getWritableDatabase();
+        String[] arguments = {stationID};
+        int rowsDeleted = db.delete(TABLE_STATION, "stationID=?", arguments);
+        Log.i(Utils.TAG, rowsDeleted + " stations deleted.");
+    }
+
+    public void updateOrInsertStation(String stationID, String md5) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("stationID", stationID);
+        contentValues.put("md5", md5);
+        String[] arguments = {stationID};
+        int rowsUpdated = db.update(TABLE_STATION, contentValues, "stationID=?", arguments);
+        if (rowsUpdated > 0) {
+            Log.i(Utils.TAG, rowsUpdated + " stations updated");
+        }
+        if (rowsUpdated == 0) {
+            long rowId = db.insert(TABLE_STATION, null, contentValues);
+            if (rowId > 0) {
+                Log.i(Utils.TAG, "Station inserted. Row ID: " + rowId);
+            } else {
+                Log.i(Utils.TAG, "Station not added or updated.");
+            }
+        }
     }
 
     private ContentValues transfer(Headend headend) {
