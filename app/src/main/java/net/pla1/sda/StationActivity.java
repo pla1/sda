@@ -119,7 +119,7 @@ public class StationActivity extends Activity {
         } else {
             menu.add(0, Menu.FIRST + 1, 0, "Subscribe");
         }
-        if (station.isSubscribed()) {
+        if (db.isSubscribedStation(station.getStationID())) {
             menu.add(0, Menu.FIRST + 2, 0, "List programs");
         }
     }
@@ -138,11 +138,27 @@ public class StationActivity extends Activity {
                 stationAdapter.notifyDataSetChanged();
                 return true;
             case Menu.FIRST + 2:
-
+                downloadPrograms(station);
                 return true;
             default:
                 return super.onContextItemSelected(item);
         }
+    }
+
+    private void downloadPrograms(final Station station) {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                Utils.downloadSchedule(context, station);
+                Utils.downloadPrograms(context, station);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+            }
+        }.execute(null, null, null);
     }
 
     private void getStations() {

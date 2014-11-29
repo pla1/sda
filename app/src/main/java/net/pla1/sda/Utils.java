@@ -11,6 +11,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -22,6 +23,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -53,6 +55,8 @@ public class Utils {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         StringBuilder sb = new StringBuilder();
         sb.append(sharedPreferences.getString("accountStatus", "")).append("\n");
+        DbUtils db = new DbUtils(context);
+        sb.append(db.getTableCounts());
         return sb.toString();
     }
 
@@ -206,6 +210,103 @@ public class Utils {
         }
 
     }
+
+    public static ArrayList<Schedule> downloadSchedule(Context context, Station station) {
+        if (!checkStatus(context)) {
+            setToken(context);
+        }
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String daysToDownload = sharedPreferences.getString("daysPreference", "2");
+        String url = "https://json.schedulesdirect.org/20140530/schedules";
+        Log.i(TAG, "URL: " + url);
+        HttpPost request = new HttpPost(url);
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        JsonObject jsonObject = new JsonObject();
+        JsonArray jsonArray = new JsonArray();
+        jsonObject.addProperty("stationID", station.getStationID());
+        jsonObject.addProperty("days", Integer.parseInt(daysToDownload));
+        jsonArray.add(jsonObject);
+        BufferedReader reader = null;
+        try {
+            StringEntity params = new StringEntity(jsonArray.toString());
+            request.addHeader("content-type", "application/json");
+            request.setEntity(params);
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Entity params: " + jsonObject.toString() + " Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+
+            //        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            //            Log.i(TAG, "Response line: " + line);
+            //        }
+
+
+            Gson gson = new Gson();
+            ScheduleResponse scheduleResponse = gson.fromJson(reader, ScheduleResponse.class);
+            ArrayList<Schedule> schedules = scheduleResponse.getPrograms();
+            Log.i(TAG, scheduleResponse.getStationID() + " program quantity: " + schedules.size());
+            int i = 1;
+            for (Schedule schedule : schedules) {
+                Log.i(TAG, i++ + " " + schedule.toString());
+            }
+            DbUtils db = new DbUtils(context);
+            db.storeSchedule(station.getStationID(), schedules);
+            return scheduleResponse.getPrograms();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<Schedule>();
+        } finally {
+            close(reader);
+        }
+
+    }
+
+    public static void downloadPrograms(Context context, Station station) {
+        if (!checkStatus(context)) {
+            setToken(context);
+        }
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String url = "https://json.schedulesdirect.org/20140530/programs";
+        Log.i(TAG, "URL: " + url);
+        HttpPost request = new HttpPost(url);
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        request.setHeader("Accept-Encoding", "deflate");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        DbUtils db = new DbUtils(context);
+        try {
+            String programRequest = db.getProgramRequest(station.getStationID());
+            if (Utils.isBlank(programRequest)) {
+                Log.i(TAG, "Program request is blank. No download of programs is necessary. Station: " + station.toString());
+                return;
+            }
+            StringEntity params = new StringEntity(programRequest);
+            request.addHeader("content-type", "application/json");
+            request.setEntity(params);
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Entity params: " + programRequest + " Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                Log.i(TAG, "Response line: " + line);
+                JSONObject jsonObject = new JSONObject(line);
+                db.storeProgram(jsonObject);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            close(reader);
+        }
+
+    }
+
 
     public static ArrayList<Lineup> getLineups(Context context) {
         if (!checkStatus(context)) {
@@ -367,7 +468,7 @@ public class Utils {
             directory.mkdirs();
             Log.i(TAG, "saveImageToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists() + " URL: " + station.getLogoUrl());
             out = new FileOutputStream(fileName);
-        //    bitmap = Bitmap.createScaledBitmap(bitmap, 100, 75, true);
+            //    bitmap = Bitmap.createScaledBitmap(bitmap, 100, 75, true);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
         } catch (Exception e) {
             e.printStackTrace();
@@ -405,5 +506,13 @@ public class Utils {
         } catch (FileNotFoundException e) {
         }
         return null;
+    }
+
+    public static String getString(JSONObject jsonObject, String fieldName) {
+        try {
+            return jsonObject.getString(fieldName);
+        } catch (JSONException e) {
+            return null;
+        }
     }
 }
