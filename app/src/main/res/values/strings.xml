@@ -7,6 +7,8 @@
     <string name="action_headends">Headends</string>
     <string name="action_lineups">Lineups</string>
     <string name="action_stations">Stations</string>
+    <string name="action_programs">Programs</string>
+    <string name="action_now_playing">Now playing</string>
     <string name="postalCodeKey">postalCode</string>
     <string name="postalCodeTitle">Postal code</string>
     <string name="usernameKey">username</string>
@@ -21,5 +23,7 @@
     <string name="headendTitle">Headends</string>
     <string name="lineupTitle">Lineups</string>
     <string name="stationTitle">Stations</string>
+    <string name="scheduleTitle">Schedule</string>
+    <string name="programTitle">Program</string>
 </resources>
 

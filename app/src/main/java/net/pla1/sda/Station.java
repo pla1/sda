@@ -1,7 +1,5 @@
 package net.pla1.sda;
 
-import android.widget.ImageView;
-
 public class Station {
     private String callsign;
     private String name;
@@ -11,6 +9,19 @@ public class Station {
     private String channel;
     private Logo logo;
     private boolean subscribed = false;
+    private String md5;
+
+    public String getChannelDisplay() {
+        return channel.replaceFirst("^0+(?!$)", "");
+    }
+
+    public String getMd5() {
+        return md5;
+    }
+
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
 
     public boolean isSubscribed() {
         return subscribed;

@@ -26,4 +26,10 @@
         android:title="@string/action_stations"
         android:orderInCategory="140"
         android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_programs"
+        android:title="@string/action_programs"
+        android:orderInCategory="150"
+        android:showAsAction="never" />
 </menu>

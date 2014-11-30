@@ -24,6 +24,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_layout);
         context = this;
+        DbUtils db = new DbUtils(context);
+        int programRowQuantity = db.getTableCount(DbUtils.TABLE_PROGRAM);
+        if (programRowQuantity > 0) {
+            Intent intent = new Intent(context, ScheduleActivity.class);
+            startActivity(intent);
+        } else {
+            Intent intent = new Intent(context, LineupActivity.class);
+            startActivity(intent);
+        }
     }
 
     @Override
@@ -53,6 +62,10 @@ public class MainActivity extends Activity {
         }
         if (id == R.id.action_stations) {
             Intent intent = new Intent(context, StationActivity.class);
+            startActivity(intent);
+        }
+        if (id == R.id.action_programs) {
+            Intent intent = new Intent(context, ScheduleActivity.class);
             startActivity(intent);
         }
         return super.onOptionsItemSelected(item);

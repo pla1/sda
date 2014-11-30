@@ -23,6 +23,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,7 +35,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -192,12 +197,6 @@ public class Utils {
             HttpResponse response = new DefaultHttpClient().execute(request);
             Log.i(TAG, "Response: " + response.getStatusLine());
             reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
-
-            //       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            //           Log.i(TAG, "Response line: " + line);
-            //       }
-
-
             Gson gson = new Gson();
             StationResponse stationResponse = gson.fromJson(reader, StationResponse.class);
             Log.i(TAG, stationResponse.toString());
@@ -208,7 +207,6 @@ public class Utils {
         } finally {
             close(reader);
         }
-
     }
 
     public static ArrayList<Schedule> downloadSchedule(Context context, Station station) {
@@ -385,6 +383,41 @@ public class Utils {
         return new JsonObject();
     }
 
+    public static JsonArray downloadProgramMetadata(Context context, String programID) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String url = "https://json.schedulesdirect.org/20140530/metadata/programs/";
+        HttpPost request = new HttpPost(url);
+        request.setHeader("Accept", "application/json");
+        request.setHeader("Content-type", "application/json");
+        request.setHeader("User-Agent", "Patrick.Archibald@gmail.com");
+        String token = sharedPreferences.getString("token", "");
+        request.setHeader("token", token);
+        Log.i(TAG, "Token: " + token);
+        BufferedReader reader = null;
+        try {
+            StringEntity params = new StringEntity("[\"" + programID + "\"]");
+            request.addHeader("content-type", "application/json");
+            request.setEntity(params);
+            HttpResponse response = new DefaultHttpClient().execute(request);
+            Log.i(TAG, "Response: " + response.getStatusLine());
+            reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                Log.i(TAG, "Response line: " + line);
+                sb.append(line);
+            }
+            JsonArray jsonArray = (JsonArray) new JsonParser().parse(sb.toString());
+            return jsonArray;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            close(reader);
+        }
+        return new JsonArray();
+    }
+
     public static ArrayList<Headend> getHeadends(Context context) {
         if (!checkStatus(context)) {
             setToken(context);
@@ -460,13 +493,13 @@ public class Utils {
         }
     }
 
-    public static void saveImageToDisk(Context context, Bitmap bitmap, Station station) {
+    public static void saveStationLogoToDisk(Context context, Bitmap bitmap, Station station) {
         FileOutputStream out = null;
         try {
             String fileName = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/" + station.getCallsign() + ".png";
             File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos");
             directory.mkdirs();
-            Log.i(TAG, "saveImageToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists() + " URL: " + station.getLogoUrl());
+            Log.i(TAG, "saveStationLogoToDisk Station logo file name: " + fileName + " directory exists: " + directory.exists() + " URL: " + station.getLogoUrl());
             out = new FileOutputStream(fileName);
             //    bitmap = Bitmap.createScaledBitmap(bitmap, 100, 75, true);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
@@ -515,4 +548,76 @@ public class Utils {
             return null;
         }
     }
+
+    public static JSONArray getJSONArray(JSONObject jsonObject, String fieldName) {
+        try {
+            return jsonObject.getJSONArray(fieldName);
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    public static JSONObject getJSONObject(JSONObject jsonObject, String fieldName) {
+        try {
+            return jsonObject.getJSONObject(fieldName);
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    public static String getDateDisplay(Date date) {
+        if (date == null) {
+            return "";
+        }
+        Calendar calendar = GregorianCalendar.getInstance();
+        calendar.setTime(date);
+        StringBuffer buf = new StringBuffer();
+        buf.append("a");
+        if (calendar.get(Calendar.SECOND) != 0) {
+            buf.insert(0, ":ss");
+        }
+        if (calendar.get(Calendar.MINUTE) != 0 || calendar.get(Calendar.SECOND) != 0) {
+            buf.insert(0, ":mm");
+        }
+        buf.insert(0, " h");
+        if (!isYearEqual(calendar.getTime(), new Date())) {
+            buf.insert(0, ", yyyy");
+        }
+        if (!isToday(calendar.getTime())) {
+            buf.insert(0, "EEE MMM dd");
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat(buf.toString());
+        String string = sdf.format(date);
+        string = string.replace("PM", "p");
+        string = string.replace("AM", "a");
+        return string.trim();
+    }
+
+    public static boolean isToday(java.util.Date date) {
+        Calendar calendarToday = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        if (calendar.get(Calendar.DAY_OF_YEAR) == calendarToday.get(Calendar.DAY_OF_YEAR)
+                && calendar.get(Calendar.YEAR) == calendarToday.get(Calendar.YEAR)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isYearEqual(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return false;
+        }
+        Calendar calendar1 = Calendar.getInstance();
+        Calendar calendar2 = Calendar.getInstance();
+        calendar1.setTime(date1);
+        calendar2.setTime(date2);
+        if (calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

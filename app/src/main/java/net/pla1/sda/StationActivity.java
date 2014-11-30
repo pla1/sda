@@ -26,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -133,7 +134,8 @@ public class StationActivity extends Activity {
                 if (db.isSubscribedStation(station.getStationID())) {
                     db.deleteStation(station.getStationID());
                 } else {
-                    db.updateOrInsertStation(station.getStationID(), null);
+                    db.updateOrInsertStation(station);
+                    downloadPrograms(station);
                 }
                 stationAdapter.notifyDataSetChanged();
                 return true;
@@ -157,6 +159,7 @@ public class StationActivity extends Activity {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
+                Toast.makeText(context, "Programs downloaded for station: " + station.getChannel() + " " + station.getName(), Toast.LENGTH_SHORT).show();
             }
         }.execute(null, null, null);
     }
@@ -317,7 +320,7 @@ public class StationActivity extends Activity {
                 InputStream in = new java.net.URL(url).openStream();
                 mIcon = BitmapFactory.decodeStream(in);
                 mIcon = Bitmap.createScaledBitmap(mIcon, 100, 75, true);
-                Utils.saveImageToDisk(context, mIcon, station[0]);
+                Utils.saveStationLogoToDisk(context, mIcon, station[0]);
             } catch (Exception e) {
                 Log.i(Utils.TAG, e.getMessage());
             }
