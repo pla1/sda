@@ -56,6 +56,19 @@ public class DbUtils extends SQLiteOpenHelper {
         db.execSQL(getTableCreateStatement(TABLE_CAST, COLUMNS_CAST));
     }
 
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        Log.w(Utils.TAG, "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data");
+        db.execSQL("drop table if exists " + TABLE_HEADEND);
+        db.execSQL("drop table if exists " + TABLE_LINEUP);
+        db.execSQL("drop table if exists " + TABLE_STATION);
+        db.execSQL("drop table if exists " + TABLE_SCHEDULE);
+        db.execSQL("drop table if exists " + TABLE_PROGRAM);
+        db.execSQL("drop table if exists " + TABLE_CAST);
+        db.execSQL("drop table if exists " + TABLE_CREW);
+        onCreate(db);
+    }
+
     private String getTableCreateStatement(String tableName, String[] columns) {
         StringBuilder sb = new StringBuilder();
         sb.append("create table ");
@@ -74,18 +87,6 @@ public class DbUtils extends SQLiteOpenHelper {
         return sb.toString();
     }
 
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.w(Utils.TAG, "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data");
-        db.execSQL("drop table if exists " + TABLE_HEADEND);
-        db.execSQL("drop table if exists " + TABLE_LINEUP);
-        db.execSQL("drop table if exists " + TABLE_STATION);
-        db.execSQL("drop table if exists " + TABLE_SCHEDULE);
-        db.execSQL("drop table if exists " + TABLE_PROGRAM);
-        db.execSQL("drop table if exists " + TABLE_CAST);
-        db.execSQL("drop table if exists " + TABLE_CREW);
-        onCreate(db);
-    }
 
     public Headend getHeadend(String uri) {
         Headend headend = new Headend();
@@ -247,6 +248,7 @@ public class DbUtils extends SQLiteOpenHelper {
     }
 
     public void storeCrew(String programID, SQLiteDatabase db, JSONArray jsonArray) {
+        Log.i(Utils.TAG, "Storing crew for program ID: " + programID + " - " + jsonArray.toString());
         int rowQuantity = jsonArray.length();
         try {
             for (int i = 0; i < rowQuantity; i++) {
@@ -265,6 +267,7 @@ public class DbUtils extends SQLiteOpenHelper {
     }
 
     public void storeCast(String programID, SQLiteDatabase db, JSONArray jsonArray) {
+        Log.i(Utils.TAG, "Storing cast for program ID: " + programID + " - " + jsonArray.toString());
         int rowQuantity = jsonArray.length();
         try {
             for (int i = 0; i < rowQuantity; i++) {
@@ -338,10 +341,37 @@ public class DbUtils extends SQLiteOpenHelper {
         return contentValues;
     }
 
+    //TODO USES getProgram(programID);
+    public ArrayList<Schedule> getScheduleTooSlow() {
+        ArrayList<Schedule> scheduleArrayList = new ArrayList<Schedule>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("select a.programID, a.airDateTime, c.channel, c.name, c.callsign, a.duration from schedule as a join station as c on a.stationID = c.stationID", null, null);
+        if (cursor.moveToFirst()) {
+            do {
+                Schedule schedule = new Schedule();
+                int col = 0;
+                Station station = new Station();
+                schedule.setStation(station);
+                String programID = cursor.getString(col++);
+                schedule.setProgramID(programID);
+                Program program = getProgram(programID);
+                schedule.setProgram(program);
+                long airDateMs = cursor.getLong(col++);
+                schedule.setAirDateTime(new Date(airDateMs));
+                station.setChannel(cursor.getString(col++));
+                station.setName(cursor.getString(col++));
+                station.setCallsign(cursor.getString(col++));
+                schedule.setDuration(cursor.getInt(col++));
+                scheduleArrayList.add(schedule);
+            } while (cursor.moveToNext());
+        }
+        return scheduleArrayList;
+    }
+
     public ArrayList<Schedule> getSchedule() {
         ArrayList<Schedule> scheduleArrayList = new ArrayList<Schedule>();
         SQLiteDatabase db = getReadableDatabase();
-        Cursor cursor = db.rawQuery("select a.programID, a.airDateTime, episodeTitle150, b.title120, c.channel, c.name, c.callsign, a.duration, b.hasImageArtwork from schedule as a join program as b on a.programID = b.programID join station as c on a.stationID = c.stationID", null, null);
+        Cursor cursor = db.rawQuery("select a.programID, a.airDateTime, episodeTitle150, b.title120, c.channel, c.name, c.callsign, a.duration, b.hasImageArtwork, b.genres from schedule as a join program as b on a.programID = b.programID join station as c on a.stationID = c.stationID", null, null);
         if (cursor.moveToFirst()) {
             do {
                 Schedule schedule = new Schedule();
@@ -362,6 +392,7 @@ public class DbUtils extends SQLiteOpenHelper {
                 station.setCallsign(cursor.getString(col++));
                 schedule.setDuration(cursor.getInt(col++));
                 program.setHasImageArtwork("true".equalsIgnoreCase(cursor.getString(col++)));
+                program.setGenres(cursor.getString(col++));
                 program.setFound(true);
                 scheduleArrayList.add(schedule);
             } while (cursor.moveToNext());
@@ -395,7 +426,7 @@ public class DbUtils extends SQLiteOpenHelper {
         ArrayList<Cast> arrayList = new ArrayList<Cast>();
         SQLiteDatabase db = getReadableDatabase();
         String[] arguments = {programID};
-        Cursor cursor = db.query(TABLE_CREW, COLUMNS_CAST, "programID=?", arguments, null, null, null);
+        Cursor cursor = db.query(TABLE_CAST, COLUMNS_CAST, "programID=?", arguments, null, null, null);
         if (cursor.moveToFirst()) {
             do {
                 Cast cast = new Cast();
@@ -425,8 +456,7 @@ public class DbUtils extends SQLiteOpenHelper {
             program.setDuration(cursor.getInt(col++));
             program.setEpisodeTitle150(cursor.getString(col++));
             program.setTitle120(cursor.getString(col++));
-            String originalAirDateString = cursor.getString(col++);
-            //  program.setOriginalAirDate();
+            program.setOriginalAirDate(cursor.getString(col++));
             program.setHasImageArtwork("true".equalsIgnoreCase(cursor.getString(col++)));
             program.setDescription(cursor.getString(col++));
             program.setGenres(cursor.getString(col++));
@@ -435,6 +465,7 @@ public class DbUtils extends SQLiteOpenHelper {
             program.setFound(true);
         }
         cursor.close();
+        db.close();
         return program;
     }
 

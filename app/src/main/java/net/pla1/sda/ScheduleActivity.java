@@ -196,6 +196,7 @@ public class ScheduleActivity extends Activity {
                 Program program = schedule.getProgram();
                 Station station = schedule.getStation();
                 String title120 = lowerIfNotNull(program.getTitle120());
+                String genres = lowerIfNotNull(program.getGenres());
                 String episodeTitle150 = lowerIfNotNull(program.getEpisodeTitle150());
                 String channel = lowerIfNotNull(station.getChannelDisplay());
                 String name = lowerIfNotNull(station.getName());
@@ -203,6 +204,7 @@ public class ScheduleActivity extends Activity {
                 if (title120.contains(searchText)
                         || episodeTitle150.contains(searchText)
                         || channel.contains(searchText)
+                        || genres.contains(searchText)
                         || name.contains(searchText)
                         || callsign.contains(searchText)) {
                     return true;

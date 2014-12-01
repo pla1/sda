@@ -6,13 +6,15 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ImageView;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -26,40 +28,53 @@ public class ProgramActivity extends Activity {
     private Context context;
     private String programID;
     private LinearLayout layout;
+    private Program program;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.program_layout);
         context = this;
+
         layout = (LinearLayout) findViewById(R.id.program_layout);
         setTitle("Program");
         Intent intent = getIntent();
         programID = intent.getStringExtra("programID");
         DbUtils db = new DbUtils(context);
-        Program program = db.getProgram(programID);
+        program = db.getProgram(programID);
         TextView titleTextView = (TextView) findViewById(R.id.title);
         TextView programIDTextView = (TextView) findViewById(R.id.programID);
-        TextView castAndCrewTextView = (TextView) findViewById(R.id.castAndCrew);
         titleTextView.setText(program.getTitle120());
         if (Utils.isNotBlank(program.getDescription())) {
             TextView descriptionTextView = (TextView) findViewById(R.id.description);
             descriptionTextView.setText(program.getDescription());
         }
-        programIDTextView.setText(programID);
+        programIDTextView.setText("Program ID: " + programID);
         if (Utils.isNotBlank(program.getGenres())) {
             TextView genresTextView = (TextView) findViewById(R.id.genres);
             genresTextView.setText("Genres: " + program.getGenres());
         }
         if (program.getOriginalAirDate() != null) {
             TextView originalAirDateTextView = (TextView) findViewById(R.id.originalAirDate);
-            originalAirDateTextView.setText(program.getOriginalAirDate().toString());
+            originalAirDateTextView.setText("Original air date: " + program.getOriginalAirDate().toString());
         }
-        castAndCrewTextView.setText(program.getCastAndCrewDisplay());
-        downloadMetadata();
+        String castAndCrew = program.getCastAndCrewDisplay();
+        if (Utils.isNotBlank(castAndCrew)) {
+            TextView castAndCrewTextView = (TextView) findViewById(R.id.castAndCrew);
+            castAndCrewTextView.setText(castAndCrew);
+        }
+        Bitmap bitmap = Utils.getProgramBackgroundImageFromDisk(context, programID);
+        if (bitmap == null) {
+            downloadBackgroundImage();
+        } else {
+            bitmap = makeTransparent(bitmap, 30);
+            Drawable drawable = new BitmapDrawable(getResources(), bitmap);
+            layout.setBackgroundColor(Color.WHITE);
+            layout.setBackground(drawable);
+        }
     }
 
-    private void downloadMetadata() {
+    private void downloadBackgroundImage() {
         new AsyncTask<Void, Void, Drawable>() {
             @Override
             protected Drawable doInBackground(Void... voids) {
@@ -70,12 +85,13 @@ public class ProgramActivity extends Activity {
                 int quantity = jsonArray.size();
                 for (int i = 0; i < quantity; i++) {
                     JsonElement jsonElement = jsonArray.get(i);
-
                     Log.i(Utils.TAG, i + " Json Element: " + jsonElement);
                     if (i == 0) {
                         JsonObject jsonObject = jsonElement.getAsJsonObject();
-                        JsonElement uriElement = jsonObject.get("uri");
-                        String uri = uriElement.getAsString();
+                        String uri = jsonObject.get("uri").getAsString();
+                        int height = jsonObject.get("height").getAsInt();
+                        int width = jsonObject.get("width").getAsInt();
+                        Log.i(Utils.TAG, "URI: " + uri + " width: " + width + " height: " + height);
                         try {
                             String url;
                             if (uri.startsWith("http")) {
@@ -85,10 +101,10 @@ public class ProgramActivity extends Activity {
                             }
                             Log.i(Utils.TAG, "URL for image download: " + url);
                             InputStream in = new java.net.URL(url).openStream();
-                            Bitmap mIcon = BitmapFactory.decodeStream(in);
-                            mIcon = Bitmap.createScaledBitmap(mIcon, 800, 450, true);
-                            mIcon = makeTransparent(mIcon, 30);
-                            return new BitmapDrawable(getResources(), mIcon);
+                            Bitmap bitmap = BitmapFactory.decodeStream(in);
+                            Utils.saveProgramBackgroundImageToDisk(context, bitmap, programID);
+                            bitmap = makeTransparent(bitmap, 30);
+                            return new BitmapDrawable(getResources(), bitmap);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -99,8 +115,7 @@ public class ProgramActivity extends Activity {
 
             @Override
             protected void onPostExecute(Drawable d) {
-
-
+                layout.setBackgroundColor(Color.WHITE);
                 layout.setBackground(d);
             }
         }.execute();
@@ -118,29 +133,35 @@ public class ProgramActivity extends Activity {
         return transBitmap;
     }
 
-    class ImageDownloader extends AsyncTask<Station, Void, Bitmap> {
-        ImageView bmImage;
 
-        public ImageDownloader(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(Station... station) {
-            String url = station[0].getLogoUrl();
-            Bitmap mIcon = null;
-            try {
-                InputStream in = new java.net.URL(url).openStream();
-                mIcon = BitmapFactory.decodeStream(in);
-                mIcon = Bitmap.createScaledBitmap(mIcon, 100, 75, true);
-                Utils.saveStationLogoToDisk(context, mIcon, station[0]);
-            } catch (Exception e) {
-                Log.i(Utils.TAG, e.getMessage());
-            }
-            return mIcon;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.program_menu, menu);
+        return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_download_assets) {
+            saveProgramAssestsToPhotoAlbum();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void saveProgramAssestsToPhotoAlbum() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                Utils.downloadProgramAssestsToPhotoAlbum(context, programID, program.getTitle120());
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+            }
+        }.execute();
+    }
+
 }

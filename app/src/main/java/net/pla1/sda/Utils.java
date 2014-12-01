@@ -109,6 +109,11 @@ public class Utils {
         }
     }
 
+    public static boolean isUserNameBlank(Context context) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        return isBlank(sharedPreferences.getString("username", ""));
+    }
+
     public static boolean checkStatus(Context context) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         HttpGet request = new HttpGet(BASE_URL + "status");
@@ -516,6 +521,63 @@ public class Utils {
         }
     }
 
+    public static void close(FileOutputStream fos) {
+        try {
+            if (fos != null) {
+                fos.close();
+            }
+        } catch (IOException e) {
+        }
+
+    }
+
+    public static void saveProgramBackgroundImageToDisk(Context context, Bitmap bitmap, String programID) {
+        FileOutputStream out = null;
+        try {
+            String fileName = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/background/" + programID + ".jpg";
+            File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/background");
+            directory.mkdirs();
+            out = new FileOutputStream(fileName);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            close(out);
+        }
+    }
+
+
+    public static void downloadProgramAssestsToPhotoAlbum(Context context, String programID, String title) {
+        JsonArray jsonArray = Utils.downloadProgramMetadata(context, programID);
+        if (jsonArray == null) {
+            return;
+        }
+        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        int quantity = jsonArray.size();
+        Log.i(TAG, quantity + " assets to download for programID: " + programID + " title: " + title);
+        for (int i = 0; i < quantity; i++) {
+            String uri = jsonArray.get(i).getAsJsonObject().get("uri").getAsString();
+            String category = jsonArray.get(i).getAsJsonObject().get("category").getAsString();
+            String fileName = category.replaceAll(" ", "_") + i + ".jpg";
+            if (!uri.startsWith("http")) {
+                uri = "https://json.schedulesdirect.org/20140530/image/" + uri;
+            }
+            Log.i(TAG, quantity + " assets to download for programID: " + programID + " title: " + title + " URI: " + uri);
+            String folderName = "/SDA/" + title.replaceAll(" ", "_");
+            Uri downloadUri = Uri.parse(uri);
+            DownloadManager.Request request = new DownloadManager.Request(downloadUri);
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
+                    .setAllowedOverRoaming(false)
+                    .setTitle(title)
+                    .setDescription(title)
+                    .setDestinationInExternalPublicDir(folderName, fileName);
+            downloadManager.enqueue(request);
+        }
+
+
+    }
+
+
     public static void saveImageToDisk(Context context, Station station) {
         if (isBlank(station.getLogoUrl())) {
             return;
@@ -531,8 +593,18 @@ public class Utils {
         mgr.enqueue(request);
     }
 
-    public static Bitmap getImageFromDisk(Context context, Station station) {
+    public static Bitmap getStationLogoFromDisk(Context context, Station station) {
         Uri uri = Uri.parse("file://" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/" + station.getCallsign() + ".png");
+        try {
+            Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
+            return bitmap;
+        } catch (FileNotFoundException e) {
+        }
+        return null;
+    }
+
+    public static Bitmap getProgramBackgroundImageFromDisk(Context context, String programID) {
+        Uri uri = Uri.parse("file://" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/SDALogos/background/" + programID + ".jpg");
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
             return bitmap;

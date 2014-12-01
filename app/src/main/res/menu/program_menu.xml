@@ -1,0 +1,11 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainLayoutActivity">
+
+    <item
+        android:id="@+id/action_download_assets"
+        android:title="@string/action_download_assets"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+
+</menu>

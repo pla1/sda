@@ -227,7 +227,7 @@ public class StationActivity extends Activity {
             String logoUrl = station.getLogoUrl();
             if (Utils.isNotBlank(logoUrl)) {
                 ImageView logoImageView = (ImageView) rowView.findViewById(R.id.logo);
-                Bitmap bitmap = Utils.getImageFromDisk(context, station);
+                Bitmap bitmap = Utils.getStationLogoFromDisk(context, station);
                 if (bitmap == null) {
                     // Utils.saveImageToDisk(context, station);
                     new ImageDownloader(logoImageView).execute(station);

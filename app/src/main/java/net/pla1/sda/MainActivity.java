@@ -4,11 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -32,6 +38,23 @@ public class MainActivity extends Activity {
         } else {
             Intent intent = new Intent(context, LineupActivity.class);
             startActivity(intent);
+        }
+        if (Utils.isUserNameBlank(context)) {
+            ViewGroup layout = (ViewGroup) findViewById(R.id.main_layout);
+            TextView textView = new TextView(context);
+            textView.setText("This app requires a Schedules Direct account. Set your user name, password and postal code in Settings.");
+            textView.setTextSize(30);
+            textView.setTypeface(Typeface.DEFAULT_BOLD);
+            layout.addView(textView);
+            textView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    String url = "https://www.schedulesdirect.org/signup";
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setData(Uri.parse(url));
+                    startActivity(i);
+                }
+            });
         }
     }
 

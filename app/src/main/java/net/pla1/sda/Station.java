@@ -12,6 +12,9 @@ public class Station {
     private String md5;
 
     public String getChannelDisplay() {
+        if (channel == null) {
+            return "";
+        }
         return channel.replaceFirst("^0+(?!$)", "");
     }
 
