@@ -555,6 +555,7 @@ public class Utils {
         DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         int quantity = jsonArray.size();
         Log.i(TAG, quantity + " assets to download for programID: " + programID + " title: " + title);
+        String folderName = "/SDA/" + title.replaceAll(" ", "_");
         for (int i = 0; i < quantity; i++) {
             String uri = jsonArray.get(i).getAsJsonObject().get("uri").getAsString();
             String category = jsonArray.get(i).getAsJsonObject().get("category").getAsString();
@@ -562,8 +563,7 @@ public class Utils {
             if (!uri.startsWith("http")) {
                 uri = "https://json.schedulesdirect.org/20140530/image/" + uri;
             }
-            Log.i(TAG, quantity + " assets to download for programID: " + programID + " title: " + title + " URI: " + uri);
-            String folderName = "/SDA/" + title.replaceAll(" ", "_");
+            Log.i(TAG, quantity + " assets to download for programID: " + programID + " title: " + title + " category: " + category + " URI: " + uri);
             Uri downloadUri = Uri.parse(uri);
             DownloadManager.Request request = new DownloadManager.Request(downloadUri);
             request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
@@ -573,8 +573,6 @@ public class Utils {
                     .setDestinationInExternalPublicDir(folderName, fileName);
             downloadManager.enqueue(request);
         }
-
-
     }
 
 

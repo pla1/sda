@@ -1,8 +1,11 @@
 package net.pla1.sda;
 
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -72,6 +77,7 @@ public class ProgramActivity extends Activity {
             layout.setBackgroundColor(Color.WHITE);
             layout.setBackground(drawable);
         }
+        registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
     private void downloadBackgroundImage() {
@@ -83,31 +89,29 @@ public class ProgramActivity extends Activity {
                     return null;
                 }
                 int quantity = jsonArray.size();
-                for (int i = 0; i < quantity; i++) {
-                    JsonElement jsonElement = jsonArray.get(i);
-                    Log.i(Utils.TAG, i + " Json Element: " + jsonElement);
-                    if (i == 0) {
-                        JsonObject jsonObject = jsonElement.getAsJsonObject();
-                        String uri = jsonObject.get("uri").getAsString();
-                        int height = jsonObject.get("height").getAsInt();
-                        int width = jsonObject.get("width").getAsInt();
-                        Log.i(Utils.TAG, "URI: " + uri + " width: " + width + " height: " + height);
-                        try {
-                            String url;
-                            if (uri.startsWith("http")) {
-                                url = uri;
-                            } else {
-                                url = "https://json.schedulesdirect.org/20140530/image/" + uri;
-                            }
-                            Log.i(Utils.TAG, "URL for image download: " + url);
-                            InputStream in = new java.net.URL(url).openStream();
-                            Bitmap bitmap = BitmapFactory.decodeStream(in);
-                            Utils.saveProgramBackgroundImageToDisk(context, bitmap, programID);
-                            bitmap = makeTransparent(bitmap, 30);
-                            return new BitmapDrawable(getResources(), bitmap);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                if (quantity > 0) {
+                    JsonElement jsonElement = jsonArray.get(0);
+                    Log.i(Utils.TAG, "Json Element: " + jsonElement);
+                    JsonObject jsonObject = jsonElement.getAsJsonObject();
+                    String uri = jsonObject.get("uri").getAsString();
+                    int height = jsonObject.get("height").getAsInt();
+                    int width = jsonObject.get("width").getAsInt();
+                    Log.i(Utils.TAG, "URI: " + uri + " width: " + width + " height: " + height);
+                    try {
+                        String url;
+                        if (uri.startsWith("http")) {
+                            url = uri;
+                        } else {
+                            url = "https://json.schedulesdirect.org/20140530/image/" + uri;
                         }
+                        Log.i(Utils.TAG, "URL for image download: " + url);
+                        InputStream in = new java.net.URL(url).openStream();
+                        Bitmap bitmap = BitmapFactory.decodeStream(in);
+                        Utils.saveProgramBackgroundImageToDisk(context, bitmap, programID);
+                        bitmap = makeTransparent(bitmap, 30);
+                        return new BitmapDrawable(getResources(), bitmap);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
                 return null;
@@ -153,7 +157,8 @@ public class ProgramActivity extends Activity {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                Utils.downloadProgramAssestsToPhotoAlbum(context, programID, program.getTitle120());
+                // Utils.downloadProgramAssestsToPhotoAlbum(context, programID, program.getTitle120());
+                downloadProgramAssestsToPhotoAlbum(context, programID, program.getTitle120());
                 return null;
             }
 
@@ -163,5 +168,40 @@ public class ProgramActivity extends Activity {
             }
         }.execute();
     }
+
+    private void downloadProgramAssestsToPhotoAlbum(Context context, String programID, String title) {
+        JsonArray jsonArray = Utils.downloadProgramMetadata(context, programID);
+        if (jsonArray == null) {
+            return;
+        }
+        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        int quantity = jsonArray.size();
+        Log.i(Utils.TAG, quantity + " assets to download for programID: " + programID + " title: " + title);
+        String folderName = "/SDA/" + title.replaceAll(" ", "_");
+        for (int i = 0; i < quantity; i++) {
+            String uri = jsonArray.get(i).getAsJsonObject().get("uri").getAsString();
+            String category = jsonArray.get(i).getAsJsonObject().get("category").getAsString();
+            String fileName = category.replaceAll(" ", "_") + i + ".jpg";
+            if (!uri.startsWith("http")) {
+                uri = "https://json.schedulesdirect.org/20140530/image/" + uri;
+            }
+            Log.i(Utils.TAG, quantity + " assets to download for programID: " + programID + " title: " + title + " category: " + category + " URI: " + uri);
+            Uri downloadUri = Uri.parse(uri);
+            DownloadManager.Request request = new DownloadManager.Request(downloadUri);
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE)
+                    .setAllowedOverRoaming(false)
+                    .setTitle(title)
+                    .setDescription(title)
+                    .setDestinationInExternalPublicDir(folderName, fileName);
+            downloadManager.enqueue(request);
+        }
+    }
+
+    BroadcastReceiver onComplete = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(context, "Download of program assets completed for title: " + program.getTitle120(), Toast.LENGTH_LONG).show();
+        }
+    };
+
 
 }

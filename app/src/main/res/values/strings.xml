@@ -27,5 +27,6 @@
     <string name="stationTitle">Stations</string>
     <string name="scheduleTitle">Schedule</string>
     <string name="programTitle">Program</string>
+    <string name="searchTitle">Search</string>
 </resources>
 

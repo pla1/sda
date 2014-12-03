@@ -1,7 +1,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainLayoutActivity">
-
+    <item
+        android:id="@+id/actionBarSearchField"
+        android:title="@string/searchTitle"
+        android:icon="@android:drawable/ic_menu_search"
+        android:showAsAction="collapseActionView|ifRoom"
+        android:actionViewClass="android.widget.SearchView" />
     <item
         android:id="@+id/action_now_playing"
         android:title="@string/action_now_playing"
