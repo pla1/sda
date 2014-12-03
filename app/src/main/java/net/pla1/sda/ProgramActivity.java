@@ -78,6 +78,13 @@ public class ProgramActivity extends Activity {
             layout.setBackground(drawable);
         }
         registerReceiver(onComplete, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+
+    }
+
+    @Override
+    protected void onStop() {
+        unregisterReceiver(onComplete);
+        super.onStop();
     }
 
     private void downloadBackgroundImage() {

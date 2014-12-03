@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -15,22 +13,22 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ScheduleActivity extends Activity {
+public class ScheduleActivity extends Activity implements SearchView.OnQueryTextListener {
     private Context context;
     private ArrayList<Schedule> scheduleArrayListAll = new ArrayList<Schedule>();
     private ArrayList<Schedule> scheduleArrayListFiltered = new ArrayList<Schedule>();
     private ScheduleAdapter scheduleAdapter;
-    private EditText filterField;
     private boolean nowPlaying = false;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +37,6 @@ public class ScheduleActivity extends Activity {
         context = this;
         setTitle("Schedule");
         ListView listView = (ListView) findViewById(R.id.listView);
-        filterField = (EditText) findViewById(R.id.filterTextField);
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         scheduleAdapter = new ScheduleAdapter(this, scheduleArrayListFiltered);
         listView.setAdapter(scheduleAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -55,25 +51,14 @@ public class ScheduleActivity extends Activity {
         });
         loadSchedule();
         listView.setTextFilterEnabled(true);
-        filterField.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-                scheduleAdapter.getFilter().filter(charSequence.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-            }
-        });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.schedule_menu, menu);
+        MenuItem searchItem = menu.findItem(R.id.actionBarSearchField);
+        searchView = (SearchView) searchItem.getActionView();
+        searchView.setOnQueryTextListener(this);
         return true;
     }
 
@@ -83,7 +68,7 @@ public class ScheduleActivity extends Activity {
         if (id == R.id.action_now_playing) {
             nowPlaying = !nowPlaying;
             item.setChecked(nowPlaying);
-            scheduleAdapter.getFilter().filter(filterField.getText());
+            scheduleAdapter.getFilter().filter(searchView.getQuery());
             scheduleAdapter.notifyDataSetChanged();
         }
         return super.onOptionsItemSelected(item);
@@ -97,8 +82,8 @@ public class ScheduleActivity extends Activity {
         Collections.sort(scheduleArrayListAll);
         scheduleArrayListFiltered.addAll(scheduleArrayListAll);
         scheduleAdapter.notifyDataSetChanged();
-        if (scheduleAdapter != null) {
-            scheduleAdapter.getFilter().filter(filterField.getText());
+        if (scheduleAdapter != null && searchView !=null) {
+            scheduleAdapter.getFilter().filter(searchView.getQuery());
         }
     }
 
@@ -221,5 +206,14 @@ public class ScheduleActivity extends Activity {
         }
     }
 
+    @Override
+    public boolean onQueryTextSubmit(String s) {
+        return false;
+    }
 
+    @Override
+    public boolean onQueryTextChange(String s) {
+        scheduleAdapter.getFilter().filter(s);
+        return false;
+    }
 }
